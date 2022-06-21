@@ -55,6 +55,7 @@ impl Endpoint {
         let socket = std::net::UdpSocket::bind(addr)?;
         let runtime = default_runtime()
             .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no async runtime found"))?;
+        let socket = runtime.wrap_udp_socket(socket)?;
         Ok(Self::new_with_runtime(EndpointConfig::default(), None, socket, runtime)?.0)
     }
 
@@ -69,6 +70,7 @@ impl Endpoint {
         let socket = std::net::UdpSocket::bind(addr)?;
         let runtime = default_runtime()
             .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no async runtime found"))?;
+        let socket = runtime.wrap_udp_socket(socket)?;
         Self::new_with_runtime(EndpointConfig::default(), Some(config), socket, runtime)
     }
 
@@ -76,7 +78,7 @@ impl Endpoint {
     pub fn new(
         config: EndpointConfig,
         server_config: Option<ServerConfig>,
-        socket: std::net::UdpSocket,
+        socket: Box<dyn AsyncUdpSocket>,
         runtime: impl Runtime,
     ) -> io::Result<(Self, Incoming)> {
         Self::new_with_runtime(config, server_config, socket, Box::new(runtime))
@@ -85,12 +87,11 @@ impl Endpoint {
     fn new_with_runtime(
         config: EndpointConfig,
         server_config: Option<ServerConfig>,
-        socket: std::net::UdpSocket,
+        socket: Box<dyn AsyncUdpSocket>,
         runtime: Box<dyn Runtime>,
     ) -> io::Result<(Self, Incoming)> {
         let runtime = Arc::new(runtime);
         let addr = socket.local_addr()?;
-        let socket = runtime.wrap_udp_socket(socket)?;
         let rc = EndpointRef::new(
             socket,
             proto::Endpoint::new(Arc::new(config), server_config.map(Arc::new)),

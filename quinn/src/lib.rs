@@ -75,6 +75,7 @@ pub use crate::connection::{
 };
 pub use crate::endpoint::{Endpoint, Incoming};
 pub use crate::recv_stream::{ReadError, ReadExactError, ReadToEndError, RecvStream};
+pub use crate::runtime::AsyncUdpSocket;
 #[cfg(feature = "runtime-async-std")]
 pub use crate::runtime::AsyncStdRuntime;
 #[cfg(feature = "runtime-tokio")]
